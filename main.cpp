@@ -11,11 +11,11 @@ int main(int argc, char* argv[]) {
 
     //Ruta del archivo que se va a ajecutar, puede ser un parametro del usuario
     string archivoInstrucciones = "D:/ejemplo de prueba.cod";
-    if (argc) {     //En teoria no deberia tener comparador, pero en mi pc al parecer si recibe un parametro. Chequen plox
+    if (argc) {
         archivoInstrucciones = argv[0];
     }
     else {
-        archivoInstrucciones = "C:/Users/danyv/Downloads/Equipo1_MaquinaEjecucion/Equipo1/instrucciones.txt";
+        archivoInstrucciones = "./instrucciones.txt";
     }
 
     //Crea la maquina de ejecucion

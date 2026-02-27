@@ -16,11 +16,17 @@ MaquinaEjecucion::MaquinaEjecucion() : memoria(DATOS_MAXIMO) {
     };
 }
 
+
+
 // Permite cargar en memoria las instrucciones del archivo
 int MaquinaEjecucion::LeerArchivo(string filepath) {
+
     InstructionsFileReader reader;  // Crear una instancia de InstructionsFileReader
     return reader.leerInstrucciones(filepath, instrucciones, INSTRUCCIONES_MAXIMO, instruccionesValidas);   // Carga las instrucciones en memoria
+
 }
+
+
 
 // Ejecuta las instrucciones de la memoria
 int MaquinaEjecucion::EjecutarInstrucciones() {
@@ -39,30 +45,35 @@ int MaquinaEjecucion::EjecutarInstrucciones() {
     return 1;
 }
 
+
+
 // Permite mostrar códigos de error
 bool MaquinaEjecucion::MostrarError(int estatus) {
     switch (estatus) {
     case 0:
         cerr << "Error leyendo el archivo" << endl;
-        return false;
+        return true;
     case 2:
         cerr << "El archivo es muy grande" << endl;
-        return false;
+        return true;
     case 3:
         cerr << "Error en la sintaxis del programa" << endl;
-        return false;
-    default:
         return true;
+    default:
+        return false;
     }
 }
 
+
+
 // Inicia la lectura sobre el archivo seleccionado
 int MaquinaEjecucion::EjecutarArchivo(string filepath) {
+
     // Lee el archivo y retorna un código de estatus
     int estatus = LeerArchivo(filepath);
 
     // Si hay error interrumpe la ejecución
-    if (!MostrarError(estatus)) {
+    if ( MostrarError(estatus) ) {
         return 0;
     }
 
@@ -70,7 +81,7 @@ int MaquinaEjecucion::EjecutarArchivo(string filepath) {
     estatus = EjecutarInstrucciones();
 
     // Si hay error interrumpe la ejecución
-    if (!MostrarError(estatus)) {
+    if ( MostrarError(estatus) ) {
         return 0;
     }
 

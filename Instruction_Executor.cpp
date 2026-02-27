@@ -11,7 +11,7 @@ InstructionExecutor::InstructionExecutor(RAM& ram, int* reg, int numReg, int reg
 
 // Método para saber el índice de la instrucción que se está ejecutando
 int InstructionExecutor::num_instruccion() {
-    return registros[7];
+    return registros[registroEjecucion];
 }
 
 // Método para ejecutar una instrucción
@@ -45,7 +45,7 @@ int InstructionExecutor::ejecutar(const Instruction& instruction) {
     }
     else if (instruction.comando == "OUT") {
         if (instruction.r < NUMERO_REGISTROS) {
-            std::cout << registros[instruction.r] << std::endl;
+            std::cout << "Valor del registro " + instruction.r + ':' + registros[instruction.r] << std::endl << std::endl;
         }
     }
     else if (instruction.comando == "ADD") {
@@ -175,6 +175,6 @@ int InstructionExecutor::ejecutar(const Instruction& instruction) {
         return 4; // Si no hay una instrucción válida
     }
 
-    registros[7]++;
+    registros[registroEjecucion]++;
     return 3;  // Retorno para continuar ejecutando
 }
