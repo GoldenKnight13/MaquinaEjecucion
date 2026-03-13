@@ -16,6 +16,7 @@ int InstructionExecutor::num_instruccion() {
 
 // Método para ejecutar una instrucción
 int InstructionExecutor::ejecutar(const Instruction& instruction) {
+
     int a = instruction.d + registros[instruction.s];
 
     std::cout << "Comando: " << instruction.comando
@@ -33,19 +34,27 @@ int InstructionExecutor::ejecutar(const Instruction& instruction) {
 
     std::cout << std::endl << std::endl;
 
+    //Intruccion de final del programa (Maxima prioridad)
     if (instruction.comando == "HALT") {
         system("pause");
         return 1;  // Salir del programa
     }
-    else if (instruction.comando == "IN") {
-        if (instruction.r < NUMERO_REGISTROS) {
-            std::cout << "Ingrese un valor para el registro " << instruction.r << ": ";
-            std::cin >> registros[instruction.r];
-        }
+
+    //Verifica que se acceda solo a los registros existentes
+    if ( (instruction.r < 0 || instruction.r >= NUMERO_REGISTROS) || 
+        (instruction.s < 0 || instruction.s >= NUMERO_REGISTROS) || 
+        (instruction.t < 0 || instruction.t >= NUMERO_REGISTROS) ){
+        return 4;
+    }
+
+    if (instruction.comando == "IN") {
+        std::cout << "Ingrese un valor para el registro " << instruction.r << ": ";
+        std::cin >> registros[instruction.r];
+        std::cout << std::endl;
     }
     else if (instruction.comando == "OUT") {
         if (instruction.r < NUMERO_REGISTROS) {
-            std::cout << "Valor del registro " + instruction.r + ':' + registros[instruction.r] << std::endl << std::endl;
+            std::cout << "Valor del registro " << instruction.r << ": " << registros[instruction.r] << std::endl << std::endl;
         }
     }
     else if (instruction.comando == "ADD") {

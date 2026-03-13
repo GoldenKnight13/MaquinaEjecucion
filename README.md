@@ -4,7 +4,7 @@
 Maquina virtual que busca ejecutar instrucciones de un lenguaje de bajo nivel assembly-like. Contiene distintos modulos encargados 
 de realizar distintas tareas, como la decodificacion y ejecucion de instrucciones, asi como la gestion de memoria.
 
-## CPU
+### CPU
 Se simulo una CPU con un conjunto variable de registros de 4 bytes cada uno, siendo el tamaño base 8; los cuales pueden ser 
 utilizados para almacenar datos temporales durante la ejecucion de un programa. El ultimo registro se utiliza para el contador 
 de las instrucciones, permitiendo mantener un orden de ejecución.
@@ -36,6 +36,16 @@ Se cuenta con un conjunto de 17 instrcciones:
 - JGT: Salta a una instruccion si el valor de un registro es mayor que el valor de otro registro
 - JEQ: Salta a una instruccion si el valor de un registro es igual al valor de otro registro
 - JNE: Salta a una instruccion si el valor de un registro es diferente al valor de otro registro
+
+### Codigos de termino
+Se tienen actualmente distintos codigos de termino del programa:
+0. Se tuvo un error al momento de ejecutar las intrucciones
+1. Exito (La maquina termino su programa sin problemas)
+2. Se tienen mas instrucciones de las que se pueden almacenar o una instruccion se intenta almacenar en un indice mayor al tamaño del vector de instrucciones (Archivo muy grande)
+3. Se tiene un error en la sintaxis del programa
+4. Se intento acceder a un registro no existente 
+
+Al momento de encontrar un error se muestra en consola la causa usando la instruccion 'cerr'.
 
 ## Inicializacion 
 Se invoca el programa y se pasa el archivo a analizar como parametro (se pasa la ruta donde se encuentra). En caso de no pasar un 
