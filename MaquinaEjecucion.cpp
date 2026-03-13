@@ -59,6 +59,9 @@ bool MaquinaEjecucion::MostrarError(int estatus) {
     case 3:
         cerr << "Error en la sintaxis del programa" << endl;
         return true;
+    case 4 :
+        cerr << "Resgistro fuera de los limites" << endl;
+        return true;
     default:
         return false;
     }
@@ -74,7 +77,7 @@ int MaquinaEjecucion::EjecutarArchivo(string filepath) {
 
     // Si hay error interrumpe la ejecución
     if ( MostrarError(estatus) ) {
-        return 0;
+        return estatus;
     }
 
     // Ejecuta las instrucciones
@@ -82,7 +85,7 @@ int MaquinaEjecucion::EjecutarArchivo(string filepath) {
 
     // Si hay error interrumpe la ejecución
     if ( MostrarError(estatus) ) {
-        return 0;
+        return estatus;
     }
 
     return 1;

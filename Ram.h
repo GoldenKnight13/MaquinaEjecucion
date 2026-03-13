@@ -21,7 +21,7 @@ public:
     RAM(unsigned int DATOS_MAXIMO);
 
     // Métodos
-    void insert(int index, int value);
+    int insert(int index, int value);
     int get(int index) const;
     int size() const;
 

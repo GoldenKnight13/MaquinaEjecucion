@@ -11,13 +11,15 @@ RAM::RAM(unsigned int DATOS_MAXIMO) : tamanio(DATOS_MAXIMO) {
     ram = new int[DATOS_MAXIMO];
 }
 
-// Método para insertar valor en la memoria
-void RAM::insert(int index, int value) {
+//Inserta un dato en la memoria RAM, devolviendo un codigo de estatus para saber si fue posible insertar el valor
+int RAM::insert(int index, int value) {
     if (index >= 0 && index < tamanio) {
         ram[index] = value;
+        return 1;
     }
     else {
         cerr << "Error: Intento de acceso fuera de los límites de la memoria en insert()." << endl;
+        return 0;
     }
 }
 
