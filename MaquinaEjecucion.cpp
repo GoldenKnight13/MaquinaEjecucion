@@ -9,71 +9,79 @@ MaquinaEjecucion::MaquinaEjecucion() : memoria(DATOS_MAXIMO) {
         registros[i] = 0;
     }
 
-    instruccionesValidas = {
-        "HALT", "IN", "OUT", "ADD", "SUB", "MUL", "DIV",
-        "LD", "LDA", "LDC", "ST",
-        "JLT", "JLE", "JGE", "JGT", "JEQ", "JNE"
-    };
 }
 
 
 
 // Permite cargar en memoria las instrucciones del archivo
-int MaquinaEjecucion::LeerArchivo(string filepath) {
+StatusCode MaquinaEjecucion::LeerArchivo(string filepath) {
 
     InstructionsFileReader reader;  // Crear una instancia de InstructionsFileReader
-    return reader.leerInstrucciones(filepath, instrucciones, INSTRUCCIONES_MAXIMO, instruccionesValidas);   // Carga las instrucciones en memoria
+    return reader.leerInstrucciones(filepath, instrucciones, INSTRUCCIONES_MAXIMO);   // Carga las instrucciones en memoria
 
 }
 
 
 
 // Ejecuta las instrucciones de la memoria
-int MaquinaEjecucion::EjecutarInstrucciones() {
+StatusCode MaquinaEjecucion::EjecutarInstrucciones() {
+    
     InstructionExecutor cpu(memoria, registros, NUMERO_REGISTROS, PC_REGISTRO);
-    int estatus;
+    StatusCode estatus;
 
-    while (true) {
-        unsigned int i = cpu.num_instruccion();
-        const auto& instruccion = instrucciones[i];
-        estatus = cpu.ejecutar(instruccion);
-        if (estatus == 1) return 1;
-        else if (estatus == 4) return 3;
-        i++;
+    for (unsigned int i = 0; i < INSTRUCCIONES_MAXIMO; i++) {
+        const Instruction& instruccion = instrucciones[i];
+        cout << instruccion.comando << endl;
     }
 
-    return 1;
+    return ENDED;
 }
 
 
 
 // Permite mostrar códigos de error
-bool MaquinaEjecucion::MostrarError(int estatus) {
+bool MaquinaEjecucion::MostrarError(StatusCode estatus) {
+
+    if (estatus == ENDED || estatus == CONTINUE ) return false;
+
+
+    std::cerr << ">>> [ERROR]: ";
     switch (estatus) {
-    case 0:
-        cerr << "Error leyendo el archivo" << endl;
-        return true;
-    case 2:
-        cerr << "El archivo es muy grande" << endl;
-        return true;
-    case 3:
-        cerr << "Error en la sintaxis del programa" << endl;
-        return true;
-    case 4 :
-        cerr << "Resgistro fuera de los limites" << endl;
-        return true;
-    default:
-        return false;
+        case LECTURE_ERROR:
+            cerr << "Error leyendo el archivo";
+            break;
+        case PROGRAM_SIZE_LIMIT_ERROR:
+            cerr << "El archivo es muy grande";
+            break;
+        case SYNTAX_ERROR:
+            cerr << "Error en la sintaxis del programa";
+            break;
+        case REGISTER_INDEX_ERROR :
+            cerr << "Resgistro fuera de los limites";
+            break;
+        case MEMORY_OVERFLOW_ERROR:
+            cerr << "Memoria fuera de los limites";
+            break;
+        case ARITH_ERROR:
+            cerr << "Error aritmetico";
+            break;
+        default:
+            cerr << "Error desconocido";
+            break;
     }
+
+    std::cerr << endl;
+    return true;
+
 }
 
 
 
 // Inicia la lectura sobre el archivo seleccionado
-int MaquinaEjecucion::EjecutarArchivo(string filepath) {
+StatusCode MaquinaEjecucion::EjecutarArchivo(string filepath) {
 
     // Lee el archivo y retorna un código de estatus
-    int estatus = LeerArchivo(filepath);
+    StatusCode estatus = LeerArchivo(filepath);
 
     // Si hay error interrumpe la ejecución
     if ( MostrarError(estatus) ) {
@@ -84,9 +92,7 @@ int MaquinaEjecucion::EjecutarArchivo(string filepath) {
     estatus = EjecutarInstrucciones();
 
     // Si hay error interrumpe la ejecución
-    if ( MostrarError(estatus) ) {
-        return estatus;
-    }
+    //MostrarError(estatus);
+    return estatus;
 
-    return 1;
 }

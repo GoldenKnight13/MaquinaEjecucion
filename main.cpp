@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     MaquinaEjecucion ejecucion;
 
     //Retorna el codigo de estado de la maquina de ejecucion
-    return ejecucion.EjecutarArchivo(archivoInstrucciones);
+    StatusCode estatusFinal = ejecucion.EjecutarArchivo(archivoInstrucciones);
+    return static_cast<int>(estatusFinal);
 
 }
