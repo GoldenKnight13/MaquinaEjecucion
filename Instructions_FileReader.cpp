@@ -1,21 +1,14 @@
 #include "Instructions_FileReader.h"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
 
 // Método para leer las instrucciones desde un archivo
-int InstructionsFileReader::leerInstrucciones(string filepath, Instruction* memoria, unsigned int maximo, vector<string>& instruccionesValidas) {
+StatusCode InstructionsFileReader::leerInstrucciones(string filepath, Instruction* memoria, unsigned int maximo) {
 
     unsigned int posicion;
     ifstream archivo(filepath);          // Crear un objeto ifstream para abrir el archivo
     string linea;                        // Variable para almacenar cada línea del archivo
 
     // Verificar si el archivo se abrió correctamente
-    if (!archivo.is_open()) {
-        return 0;
-    }
+    if (!archivo.is_open()) return LECTURE_ERROR;
 
     // Leer el archivo línea por línea
     while (getline(archivo, linea)) {
@@ -36,14 +29,16 @@ int InstructionsFileReader::leerInstrucciones(string filepath, Instruction* memo
         }
         //Si hay error, para la ejecucion y manda un codigo de error
         catch (const std::invalid_argument& e) {
-            return 3;
+            return SYNTAX_ERROR;
         }
 
-        if ( posicion >= maximo ) {
-            return 2;
-        }
+        //Si el archivo es mas grande de lo que se puede procesar
+        if ( posicion >= maximo )  return PROGRAM_SIZE_LIMIT_ERROR;
 
-        memoria[posicion].comando = instruccion;
+        //Intenta obtener la operacion del archivo
+        auto it = InstructionSet::TRANSLATOR.find(instruccion);
+        if ( it != InstructionSet::TRANSLATOR.end() ) memoria[posicion].comando = it->second ;
+        else return SYNTAX_ERROR; 
 
         // Diferencia entre los parámetros de las instrucciones de operación y memoria
         if (parametros.find('(') != string::npos) {
@@ -64,7 +59,8 @@ int InstructionsFileReader::leerInstrucciones(string filepath, Instruction* memo
     }
 
     archivo.close();  // Cerrar el archivo después de leer todas las líneas
-    return 1;  // Retornar el vector de instrucciones
+    return CONTINUE;  // Retornar el vector de instrucciones
+
 }
 
 // Método privado para separar una cadena por un delimitador

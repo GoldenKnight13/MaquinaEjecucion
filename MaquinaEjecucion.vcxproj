@@ -19,16 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Estatus.h" />
     <ClInclude Include="Instruction.h" />
+    <ClInclude Include="Instruction_Set.h" />
     <ClInclude Include="Instructions_FileReader.h" />
-    <ClInclude Include="Instructions_Reader.h" />
     <ClInclude Include="Instruction_Executor.h" />
     <ClInclude Include="MaquinaEjecucion.h" />
     <ClInclude Include="Ram.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Instructions_FileReader.cpp" />
-    <ClCompile Include="Instructions_Reader.cpp" />
     <ClCompile Include="Instruction_Executor.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MaquinaEjecucion.cpp" />
@@ -140,6 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

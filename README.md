@@ -43,7 +43,9 @@ Se tienen actualmente distintos codigos de termino del programa:
 1. Exito (La maquina termino su programa sin problemas)
 2. Se tienen mas instrucciones de las que se pueden almacenar o una instruccion se intenta almacenar en un indice mayor al tamaño del vector de instrucciones (Archivo muy grande)
 3. Se tiene un error en la sintaxis del programa
-4. Se intento acceder a un registro no existente 
+4. Se intento acceder a un registro no existente
+5. Hola
+6. Error aritmetico (Intento de division entre 0)
 
 Al momento de encontrar un error se muestra en consola la causa usando la instruccion 'cerr'.
 

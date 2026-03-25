@@ -1,9 +1,11 @@
 #pragma once
 #include "Ram.h"
 #include "Instruction.h"
+#include "Estatus.h"
 #include <vector>
 #include <string>
 #include <iostream>
+#include <cstdlib> // Para usar system("pause")
 
 // Clase que maneja la ejecución de instrucciones
 class InstructionExecutor {
@@ -23,6 +25,9 @@ public:
     // Método para saber el índice de la instrucción que se está ejecutando
     int num_instruccion();
 
+    //Metodo para obtener el estado de lso registros
+    void getValoresRegistros();
+
     // Método para ejecutar una instrucción
-    int ejecutar(const Instruction& instruction);
+    StatusCode ejecutar(const Instruction& instruction);
 };
