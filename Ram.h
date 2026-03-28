@@ -1,6 +1,7 @@
 #pragma once
 
 // Librerías
+#include "Estatus.h"
 #include <iostream>
 using namespace std;
 
@@ -21,8 +22,8 @@ public:
     RAM(unsigned int DATOS_MAXIMO);
 
     // Métodos
-    int insert(int index, int value);
-    int get(int index) const;
+    StatusCode insert(int index, int value);
+    StatusCode get(int index, int& returnValue) const;
     int size() const;
 
 

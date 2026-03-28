@@ -27,14 +27,18 @@ StatusCode MaquinaEjecucion::LeerArchivo(string filepath) {
 StatusCode MaquinaEjecucion::EjecutarInstrucciones() {
     
     InstructionExecutor cpu(memoria, registros, NUMERO_REGISTROS, PC_REGISTRO);
-    StatusCode estatus;
 
-    for (unsigned int i = 0; i < INSTRUCCIONES_MAXIMO; i++) {
-        const Instruction& instruccion = instrucciones[i];
-        cout << instruccion.comando << endl;
+    //Estatus inicial, permite iniciar la ejecucion
+    StatusCode estatus = CONTINUE;;
+
+    //Ciclo principal
+    while (estatus == CONTINUE) {
+        int programCounter = registros[PC_REGISTRO];
+        Instruction instruccionActual = instrucciones[ programCounter ];
+        estatus = cpu.ejecutar(instruccionActual);
     }
 
-    return ENDED;
+    return estatus;
 }
 
 
@@ -48,7 +52,7 @@ bool MaquinaEjecucion::MostrarError(StatusCode estatus) {
     std::cerr << ">>> [ERROR]: ";
     switch (estatus) {
         case LECTURE_ERROR:
-            cerr << "Error leyendo el archivo";
+            cerr << "No se pudo leer el archivo";
             break;
         case PROGRAM_SIZE_LIMIT_ERROR:
             cerr << "El archivo es muy grande";
@@ -57,13 +61,16 @@ bool MaquinaEjecucion::MostrarError(StatusCode estatus) {
             cerr << "Error en la sintaxis del programa";
             break;
         case REGISTER_INDEX_ERROR :
-            cerr << "Resgistro fuera de los limites";
+            cerr << "Registro fuera de los limites";
             break;
         case MEMORY_OVERFLOW_ERROR:
             cerr << "Memoria fuera de los limites";
             break;
         case ARITH_ERROR:
             cerr << "Error aritmetico";
+            break;
+        case INPUT_ERROR:
+            cerr << "Se ingreso un valor muy grande o no soportado";
             break;
         default:
             cerr << "Error desconocido";
@@ -92,7 +99,7 @@ StatusCode MaquinaEjecucion::EjecutarArchivo(string filepath) {
     estatus = EjecutarInstrucciones();
 
     // Si hay error interrumpe la ejecución
-    //MostrarError(estatus);
+    MostrarError(estatus);
     return estatus;
 
 }

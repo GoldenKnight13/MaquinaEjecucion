@@ -13,6 +13,8 @@ enum StatusCode : int{
 	REGISTER_INDEX_ERROR = 4,
 	MEMORY_OVERFLOW_ERROR = 5,
 	ARITH_ERROR = 6,
+	INPUT_ERROR = 7,
+	MEMORY_ACCESS_ERROR = 8,
 
 	//Codigos internos
 	CONTINUE = 100,

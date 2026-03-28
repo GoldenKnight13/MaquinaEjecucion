@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <cstdlib> // Para usar system("pause")
+#include <functional>
 
 // Clase que maneja la ejecución de instrucciones
 class InstructionExecutor {
@@ -15,8 +16,16 @@ private:
     unsigned int registroEjecucion;
     unsigned int NUMERO_REGISTROS;
 
-    // Instrucciones que se pueden ejecutar
-    std::vector<std::string> instrucciones;
+    //Mapa de instrucciones, permite ejecutarlas de forma rapida y separada
+    std::unordered_map<
+        InstructionSet::KEYWORD,
+        std::function<StatusCode(const Instruction&)>
+    > OPERACIONES;
+
+    void iniciarMapaInstrucciones();
+
+    int calcularDireccionMemoria(const Instruction&);
+    bool esRegistroValido(int seleccion);
 
 public:
     // Constructor de la clase InstructionExecutor

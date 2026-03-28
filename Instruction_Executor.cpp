@@ -1,8 +1,307 @@
 #include "Instruction_Executor.h"
 
+//Permite inicializar el mapa hash que trnaforma instrucciones en acciones
+void InstructionExecutor::iniciarMapaInstrucciones() {
+
+    //Finalizacion de programa
+    OPERACIONES[InstructionSet::KEYWORD::HALT] = [this](const Instruction& instruction) -> StatusCode {
+        return ENDED;
+    };
+
+    //Funciones de IO
+    OPERACIONES[InstructionSet::KEYWORD::IN] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se intente acceder a un registro valido
+        const int registroDestino = instruction.r;
+        if (!esRegistroValido(registroDestino)) return REGISTER_INDEX_ERROR;
+
+        //Intenta obtener el valor del usuario
+        int entrada;
+        std::cout << "Ingrese un valor para el registro " << instruction.r << ": ";
+
+        if ( !(std::cin >> entrada) ) {
+
+            //En caso de que se cierre la terminal o haya un error en el flujo de entrada
+            if (std::cin.eof()) return ENDED; 
+
+            std::cin.clear();   //Se limpian las banderas 
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //Limpieza del buffer
+
+            //Retorno del error
+            return INPUT_ERROR;
+        }
+        
+        //Ingresa el valor en el registro solicitado
+        registros[registroDestino] = entrada;
+        std::cout << std::endl;
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::OUT] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Verifica si el registro es valido
+        const int registroDestino = instruction.r;
+        if (!esRegistroValido(registroDestino)) return REGISTER_INDEX_ERROR;
+
+        //Muestra la informacion solicitada
+        std::cout << "Valor del registro " << instruction.r << ": " << registros[instruction.r] << std::endl << std::endl;
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    
+    //Funciones aritmeticas
+    OPERACIONES[InstructionSet::KEYWORD::ADD] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int destino = instruction.r, operando1 = instruction.s, operando2 = instruction.t;
+
+        if ( !esRegistroValido(destino) || !esRegistroValido(operando1) || !esRegistroValido(operando2) )
+            return REGISTER_INDEX_ERROR;
+
+        registros[destino] = registros[operando1] + registros[operando2];
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::SUB] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int destino = instruction.r, operando1 = instruction.s, operando2 = instruction.t;
+
+        if (!esRegistroValido(destino) || !esRegistroValido(operando1) || !esRegistroValido(operando2))
+            return REGISTER_INDEX_ERROR;
+
+        registros[destino] = registros[operando1] - registros[operando2];
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::MUL] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int destino = instruction.r, operando1 = instruction.s, operando2 = instruction.t;
+
+        if (!esRegistroValido(destino) || !esRegistroValido(operando1) || !esRegistroValido(operando2))
+            return REGISTER_INDEX_ERROR;
+
+        registros[destino] = registros[operando1] * registros[operando2];
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::DIV] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int destino = instruction.r, operando1 = instruction.s, operando2 = instruction.t;
+
+        if (!esRegistroValido(destino) || !esRegistroValido(operando1) || !esRegistroValido(operando2))
+            return REGISTER_INDEX_ERROR;
+
+        const int divisor = registros[operando2];
+        if (divisor == 0) return ARITH_ERROR;
+
+        registros[destino] = registros[operando1] / registros[operando2];
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+
+    //Funciones de memoria
+    OPERACIONES[InstructionSet::KEYWORD::LD] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int direccion = calcularDireccionMemoria(instruction);
+        const int destino = instruction.r;
+
+        //Valida que se pueda tenga una direccion de memoria y regsitro validos
+        if (direccion < 0 || direccion >= memoria.size() ) return MEMORY_OVERFLOW_ERROR;
+        if ( !esRegistroValido( destino ) ) return REGISTER_INDEX_ERROR; 
+
+        //Realiza una verificacion de que se obtuvo la informacion de forma correcta
+        int valor;
+        StatusCode estatus = memoria.get(direccion, valor);
+        if (estatus == CONTINUE) registros[destino] = valor;
+
+        registros[registroEjecucion]++;
+        return estatus;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::LDA] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int direccion = calcularDireccionMemoria(instruction);
+        const int destino = instruction.r;
+
+        //Valida que se pueda tenga una direccion de memoria y regsitro validos
+        if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+        if (!esRegistroValido(destino)) return REGISTER_INDEX_ERROR;
+
+        registros[destino] = direccion;
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::LDC] = [this](const Instruction& instruction) -> StatusCode {
+
+        const int origen = instruction.d;
+        const int destino = instruction.r;
+
+        //Valida que se acceda a registros existentes
+        if ( !esRegistroValido(origen) || !esRegistroValido(destino) ) return REGISTER_INDEX_ERROR;
+
+        registros[destino] = origen;
+
+        registros[registroEjecucion]++;
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::ST] = [this](const Instruction& instruction) -> StatusCode {
+        
+        const int direccion = calcularDireccionMemoria(instruction);
+        const int origen = instruction.r;
+
+        //Valida que se pueda tenga una direccion de memoria y regsitro validos
+        if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+        if (!esRegistroValido(origen) ) return REGISTER_INDEX_ERROR;
+
+        //Verifica que se haya insertado correctamente la informacion en la memoria
+        const StatusCode estatusMemoria = memoria.insert(direccion, registros[origen] );
+
+        registros[registroEjecucion]++;
+        return estatusMemoria;
+    };
+
+    //Funciones de salto
+    OPERACIONES[InstructionSet::KEYWORD::JLT] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se pueda tenga una direccion de regsitro valida
+        const int origen = instruction.r;
+        if (!esRegistroValido(origen)) return REGISTER_INDEX_ERROR;
+
+        //Salta de instruccion si es que el registro tiene un valor menor que 0
+        if (registros[origen] < 0) {
+
+            const int direccion = calcularDireccionMemoria(instruction);
+            if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+
+            registros[registroEjecucion] = direccion;
+
+        }
+        else registros[ registroEjecucion ]++;
+
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::JLE] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se pueda tenga una direccion de regsitro valida
+        const int origen = instruction.r;
+        if (!esRegistroValido(origen)) return REGISTER_INDEX_ERROR;
+
+        //Salta de instruccion si es que el registro tiene un valor menor o igual que 0
+        if (registros[origen] <= 0) {
+
+            const int direccion = calcularDireccionMemoria(instruction);
+            if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+
+            registros[registroEjecucion] = direccion;
+
+        }
+        else registros[registroEjecucion]++;
+
+        return CONTINUE;
+
+    };
+    OPERACIONES[InstructionSet::KEYWORD::JGT] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se pueda tenga una direccion de regsitro valida
+        const int origen = instruction.r;
+        if (!esRegistroValido(origen)) return REGISTER_INDEX_ERROR;
+
+        //Salta de instruccion si es que el registro tiene un valor mayor que 0
+        if (registros[origen] > 0) {
+
+            const int direccion = calcularDireccionMemoria(instruction);
+            if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+
+            registros[registroEjecucion] = direccion;
+
+        }
+        else registros[registroEjecucion]++;
+
+        return CONTINUE;
+
+    };
+    OPERACIONES[InstructionSet::KEYWORD::JGE] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se pueda tenga una direccion de regsitro valida
+        const int origen = instruction.r;
+        if (!esRegistroValido(origen)) return REGISTER_INDEX_ERROR;
+
+        //Salta de instruccion si es que el registro tiene un valor mayor o igual que 0
+        if (registros[origen] >= 0) {
+
+            const int direccion = calcularDireccionMemoria(instruction);
+            if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+
+            registros[registroEjecucion] = direccion;
+
+        }
+        else registros[registroEjecucion]++;
+
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::JEQ] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se pueda tenga una direccion de regsitro valida
+        const int origen = instruction.r;
+        if (!esRegistroValido(origen)) return REGISTER_INDEX_ERROR;
+
+        //Salta de instruccion si es que el registro tiene un valor igual a 0
+        if (registros[origen] == 0) {
+
+            const int direccion = calcularDireccionMemoria(instruction);
+            if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+
+            registros[registroEjecucion] = direccion;
+
+        }
+        else registros[registroEjecucion]++;
+
+        return CONTINUE;
+    };
+    OPERACIONES[InstructionSet::KEYWORD::JNE] = [this](const Instruction& instruction) -> StatusCode {
+
+        //Valida que se pueda tenga una direccion de regsitro valida
+        const int origen = instruction.r;
+        if (!esRegistroValido(origen)) return REGISTER_INDEX_ERROR;
+
+        //Salta de instruccion si es que el registro tiene un valor distinto de 0
+        if (registros[origen] != 0) {
+
+            const int direccion = calcularDireccionMemoria(instruction);
+            if (direccion < 0 || direccion >= memoria.size()) return MEMORY_OVERFLOW_ERROR;
+
+            registros[registroEjecucion] = direccion;
+
+        }
+        else registros[registroEjecucion]++;
+
+        return CONTINUE;
+    };
+
+}
+
+//Permite saber si se puede acceder a los registros seleccionados
+bool InstructionExecutor::esRegistroValido(int seleccion) {
+    return (seleccion > 0) && (seleccion < NUMERO_REGISTROS);
+};
+
+//Calcula la direccion de memoria deseada
+int InstructionExecutor::calcularDireccionMemoria(const Instruction& instruction) {
+    int registroAccedido = instruction.s;
+    if (!esRegistroValido(registroAccedido)) return -1;
+    else return instruction.d + registros[registroAccedido];
+}
+
 // Constructor de la clase InstructionExecutor
 InstructionExecutor::InstructionExecutor(RAM& ram, int* reg, int numReg, int regExec)
     : memoria(ram), registros(reg), NUMERO_REGISTROS(numReg), registroEjecucion(regExec) {
+
+    iniciarMapaInstrucciones();
 }
 
 // Método para saber el índice de la instrucción que se está ejecutando
@@ -29,6 +328,7 @@ void InstructionExecutor::getValoresRegistros() {
 // Método para ejecutar una instrucción
 StatusCode InstructionExecutor::ejecutar(const Instruction& instruction) {
 
+    //Muestra la informacion de la instruccion
     std::cout << "Comando: " << instruction.comando
         << " ,r: " << instruction.r
         << " ,s: " << instruction.s
@@ -36,150 +336,12 @@ StatusCode InstructionExecutor::ejecutar(const Instruction& instruction) {
         << " ,d: " << instruction.d
         << std::endl;
 
-    /*
-    //Intruccion de final del programa (Maxima prioridad)
-    if (instruction.comando == "HALT") {
-        getValoresRegistros();
-        system("pause");
-        return ENDED;  // Salir del programa
-    }
-
-    //Verifica que se acceda solo a los registros existentes
-    if ((instruction.r < 0 || instruction.r >= NUMERO_REGISTROS) ||
-        (instruction.s < 0 || instruction.s >= NUMERO_REGISTROS) ||
-        (instruction.t < 0 || instruction.t >= NUMERO_REGISTROS)) {
-        return REGISTER_INDEX_ERROR;
-    }
-
-    //Calcula la direccion de memoria
-    int a = instruction.d + registros[instruction.s];
-    std::cout << "Direccion de memoria calculada (a): " << a << endl;
+    //Muestra el estado actual de la maquina de ejecucion
     getValoresRegistros();
 
-    //Manipulacion directa de registros
-    if (instruction.comando == "IN") {
-        std::cout << "Ingrese un valor para el registro " << instruction.r << ": ";
-        std::cin >> registros[instruction.r];
-        std::cout << std::endl;
-    }
-    if (instruction.comando == "OUT"){ 
-      std::cout << "Valor del registro " << instruction.r << ": " << registros[instruction.r] << std::endl << std::endl;
-    }
+    //Busca la instruccion solicitada, si puede la ejecuta y retorna el estado de la maquina
+    auto it = OPERACIONES.find( instruction.comando );
+    if (it != OPERACIONES.end()) return it->second(instruction);
+    else return SYNTAX_ERROR;
 
-    //Operaciones aritmeticas
-    if (instruction.comando == "ADD") {
-        registros[instruction.r] = registros[instruction.s] + registros[instruction.t];
-    }
-    if (instruction.comando == "SUB") {
-        registros[instruction.r] = registros[instruction.s] - registros[instruction.t];
-    }
-    if (instruction.comando == "MUL") {
-        registros[instruction.r] = registros[instruction.s] * registros[instruction.t];
-
-    }
-    if (instruction.comando == "DIV") {
-        if (registros[instruction.t] != 0) {
-            registros[instruction.r] = registros[instruction.s] / registros[instruction.t];
-        }
-        else {
-            std::cout << "Error: Division por cero no permitida." << std::endl;
-			return ARITH_ERROR;  // Error aritmetico
-        }
-    }
-
-    //Instrucciones de memoria
-    if (instruction.comando == "LD") {
-        registros[instruction.r] = memoria.get(a);
-    }
-    if (instruction.comando == "LDA") {
-        registros[instruction.r] = a;
-    }
-    if (instruction.comando == "LDC") {
-        registros[instruction.r] = instruction.d;
-    }
-    if (instruction.comando == "ST") {
-        if (a >= 0 && a < memoria.size()) {
-            memoria.insert(a, registros[instruction.r]);
-        }
-        else {
-            return MEMORY_OVERFLOW_ERROR;
-        }
-    }
-
-    // Instrucciones de salto condicional
-    else if (instruction.comando == "JLT") {  // Salta si registros[r] < 0
-        if (registros[instruction.r] < 0) {
-            if (a >= 0 && a < memoria.size()) {  // Validación del rango de la dirección de salto
-                registros[registroEjecucion] = a;  // Actualiza el registro de ejecución
-            }
-            else {
-                std::cerr << "Error: Dirección de salto fuera de rango en JLT: " << a << std::endl;
-                return ENDED;  // Error en la instrucción
-            }
-        }
-    }
-    else if (instruction.comando == "JLE") {  // Salta si registros[r] <= 0
-        if (registros[instruction.r] <= 0) {
-            if (a >= 0 && a < memoria.size()) {
-                registros[registroEjecucion] = a;
-            }
-            else {
-                std::cerr << "Error: Dirección de salto fuera de rango en JLE: " << a << std::endl;
-                return ENDED;
-            }
-        }
-    }
-    else if (instruction.comando == "JGE") {  // Salta si registros[r] >= 0
-        if (registros[instruction.r] >= 0) {
-            if (a >= 0 && a < memoria.size()) {
-                registros[registroEjecucion] = a;
-            }
-            else {
-                std::cerr << "Error: Dirección de salto fuera de rango en JGE: " << a << std::endl;
-                return SYNTAX_ERROR;
-            }
-        }
-    }
-    else if (instruction.comando == "JGT") {  // Salta si registros[r] > 0
-        if (registros[instruction.r] > 0) {
-            if (a >= 0 && a < memoria.size()) {
-                registros[registroEjecucion] = a;
-            }
-            else {
-                std::cerr << "Error: Dirección de salto fuera de rango en JGT: " << a << std::endl;
-                return SYNTAX_ERROR;
-            }
-        }
-    }
-    else if (instruction.comando == "JEQ") {  // Salta si registros[r] == 0
-        if (registros[instruction.r] == 0) {
-            if (a >= 0 && a < memoria.size()) {
-                registros[registroEjecucion] = a;
-            }
-            else {
-                std::cerr << "Error: Dirección de salto fuera de rango en JEQ: " << a << std::endl;
-                return SYNTAX_ERROR;
-            }
-        }
-    }
-    else if (instruction.comando == "JNE") {  // Salta si registros[r] != 0
-        if (registros[instruction.r] != 0) {
-            if (a >= 0 && a < memoria.size()) {
-                registros[registroEjecucion] = a;
-            }
-            else {
-                std::cerr << "Error: Dirección de salto fuera de rango en JNE: " << a << std::endl;
-                return SYNTAX_ERROR;
-            }
-        }
-    }
-
-
-    else {
-        return SYNTAX_ERROR; // Si no hay una instrucción válida
-    }
-    */
-
-    registros[registroEjecucion]++;
-    return CONTINUE;  // Retorno para continuar ejecutando
 }
